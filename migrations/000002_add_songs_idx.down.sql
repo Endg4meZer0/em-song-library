@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS song_id_idx;
