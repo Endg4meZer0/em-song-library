@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"effective-mobile-song-library/internal/model"
@@ -168,10 +169,10 @@ func (sr *SongsRepository) Insert(songInfo *model.SongInfo) error {
 }
 
 func (sr *SongsRepository) Update(song *model.SongInfo) error {
-	query := `
+	query := fmt.Sprintf(`
 		UPDATE songs
-		SET group = $2, song = $3, release_date = $4, link = $5, song_text = $6
-		WHERE song_id = $1`
+		SET group = $2, song = $3, release_date = $4, link = $5, song_text = %s
+		WHERE song_id = $1`, arrayIntoPlaceholders(song.Text, 6))
 
 	args := []any{
 		song.ID,
@@ -179,7 +180,9 @@ func (sr *SongsRepository) Update(song *model.SongInfo) error {
 		song.Song,
 		song.ReleaseDate,
 		song.Link,
-		arrayIntoPlaceholders(song.Text, 6),
+	}
+	for _, verse := range song.Text {
+		args = append(args, verse)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
