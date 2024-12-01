@@ -16,6 +16,7 @@ import (
 type SongLibraryService interface {
 	Get(id uint64) (*model.SongInfo, error)
 	GetAll(model.SongFilters) ([]*model.SongInfo, error)
+	GetText(model.SongTextFilters) (*string, error)
 	InsertSongs(groups []string, songs []string) ([]*model.SongInfo, error)
 	Update(cars *model.SongInfo) error
 	Delete(id uint64) error

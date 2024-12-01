@@ -5,7 +5,7 @@ import (
 	"reflect"
 
 	"effective-mobile-song-library/internal/model"
-	"effective-mobile-song-library/internal/repository/api"
+	"effective-mobile-song-library/internal/repository/external"
 	"effective-mobile-song-library/pkg/logger"
 )
 
@@ -48,33 +48,37 @@ func (sl *SongLibraryService) GetText(filters model.SongTextFilters) (*string, e
 	return sl.songRepo.GetText(filters)
 }
 
-func (sl *SongLibraryService) Insert(group string, song string) (*model.SongInfo, error) {
-	songInfo, err := sl.apiClient.GetSongInfoWithDetails(group, song)
+func (sl *SongLibraryService) InsertSongs(groups []string, songs []string) ([]*model.SongInfo, error) {
+	songInfos := make([]*model.SongInfo, len(groups))
+	for i := range groups {
+		songInfo, err := sl.apiClient.GetSongInfoWithDetails(groups[i], songs[i])
+		
+		logger.PrintDebug("info from external API", map[string]any{
+			"songInfo": songInfo,
+		})
 
-	logger.PrintDebug("info from external API", map[string]any{
-		"songInfo": songInfo,
-	})
-
-	if err != nil {
-		if errors.Is(err, api.ErrBadRequest) {
-			logger.PrintDebug("did not add song", map[string]any{
-				"group": group,
-				"song":  song,
-				"error": err,
-			})
-		} else {
-			return nil, err
-		}
-	}
-
-	if songInfo != nil {
-		err = sl.songRepo.Insert(songInfo)
 		if err != nil {
-			return nil, err
+			if errors.Is(err, external.ErrBadRequest) {
+				logger.PrintDebug("did not add song", map[string]any{
+					"group": groups[i],
+					"song":  songs[i],
+					"error": err,
+				})
+			} else {
+				return nil, err
+			}
+		}
+
+		if songInfo != nil {
+			err = sl.songRepo.Insert(songInfo)
+			if err != nil {
+				return nil, err
+			}
+			songInfos = append(songInfos, songInfo)
 		}
 	}
-
-	return songInfo, nil
+	
+	return songInfos, nil
 }
 
 func (sl *SongLibraryService) Update(song *model.SongInfo) error {
