@@ -3,6 +3,7 @@ package delivery
 import (
 	"effective-mobile-song-library/internal/model"
 	"effective-mobile-song-library/pkg/validator"
+	"fmt"
 )
 
 func ValidateSongFilters(v *validator.Validator, f model.SongFilters) {
@@ -21,23 +22,14 @@ func ValidateSongFilters(v *validator.Validator, f model.SongFilters) {
 	v.Check(f.PageSize <= 100, "page_size", "must be a maximum of 100")
 }
 
-func ValidateSongTextFilters(v *validator.Validator, f model.SongTextFilters) {
-	v.Check(f.Verse > 0, "verse", "must be greater than zero")
+func ValidateSongTextFilters(v *validator.Validator, f model.SongTextFilters, textLen uint) {
+	v.Check(f.Verse <= textLen, "verse", fmt.Sprintf("must not be greater than total verses: %v", textLen))
 	v.Check(f.Verse <= 10_000_000, "verse", "must be a maximum of 10 million")
 }
 
-func ValidateSongs(v *validator.Validator, groups []string, songs []string) {
-	v.Check(len(groups) == len(songs), "songs", "amount of groups and songs mismatch")
-	for i := range groups {
-		if groups[i] != "" {
-			v.AddError("group", "must be provided")
-			break
-		}
-		if songs[i] != "" {
-			v.AddError("song", "must be provided")
-			break
-		}
-	}
+func ValidateSongInput(v *validator.Validator, group string, song string) {
+	v.Check(group != "", "group", "must be provided")
+	v.Check(song != "", "song", "must be provided")
 }
 
 func ValidateSongInfo(v *validator.Validator, song *model.SongInfo) {

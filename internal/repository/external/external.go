@@ -1,4 +1,4 @@
-package api
+package external
 
 import (
 	"effective-mobile-song-library/config"
@@ -38,10 +38,10 @@ func (ac *ApiClient) GetSongInfoWithDetails(group string, song string) (*model.S
 		}
 	}
 
-	var songInfoWithDetails model.SongInfo = model.SongInfo{Group: group, Song: song}
-	if err := json.NewDecoder(resp.Body).Decode(&songInfoWithDetails); err != nil {
+	var songInfoWithDetailsDTO SongInfoWithDetailsDTO = SongInfoWithDetailsDTO{Group: group, Song: song}
+	if err := json.NewDecoder(resp.Body).Decode(&songInfoWithDetailsDTO); err != nil {
 		return nil, err
 	}
 
-	return &songInfoWithDetails, nil
+	return songInfoWithDetailsDTO.ToModel(), nil
 }

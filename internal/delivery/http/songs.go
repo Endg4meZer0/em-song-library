@@ -15,9 +15,10 @@ import (
 
 type SongLibraryService interface {
 	Get(id uint64) (*model.SongInfo, error)
-	GetAll(model.SongFilters) ([]*model.SongInfo, error)
-	InsertSongs(groups []string, songs []string) ([]*model.SongInfo, error)
-	Update(cars *model.SongInfo) error
+	GetAll(model.SongFilters) ([]*model.SongOut, error)
+	GetText(model.SongTextFilters) (*string, error)
+	Insert(group string, song string) (*model.SongInfo, error)
+	Update(songs *model.SongInfo) error
 	Delete(id uint64) error
 }
 
@@ -28,6 +29,9 @@ type SongLibraryService interface {
 // @Produce json
 // @Param  group   query string  false  "name search by group"
 // @Param  song   query string  false  "name search by song"
+// @Param  releaseDate   query string  false  "search by release date (YYYY, MM.YYYY or DD.MM.YYYY)"
+// @Param  text   query string  false  "search by a part of song's text"
+// @Param  link   query string  false  "match link"
 // @Param  page   query uint  false  "page number, default 1"
 // @Param  pageSize   query uint  false  "page size, default 10"
 // @Success 200 {object} model.Songs
@@ -41,9 +45,12 @@ func (h *Handler) listSongsHandler(w http.ResponseWriter, r *http.Request) {
 
 	filters.Group = readString(qs, "group", "")
 	filters.Song = readString(qs, "song", "")
+	filters.ReleaseDate = readString(qs, "releaseDate", "")
+	filters.Text = readString(qs, "text", "")
+	filters.Link = readString(qs, "link", "")
 
 	filters.Page = readUint(qs, "page", 1, v)
-	filters.PageSize = readUint(qs, "page_size", 10, v)
+	filters.PageSize = readUint(qs, "pageSize", 10, v)
 
 	if delivery.ValidateSongFilters(v, filters); !v.Valid() {
 		errResponses.FailedValidationResponse(w, r, v.Errors)
@@ -80,7 +87,7 @@ func (h *Handler) listSongsHandler(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param  id path uint true "song id"
-// @Param  verse   query uint  false  "verse number, default 1"
+// @Param  verse   query uint  false  "verse number, default 0 (display full text)"
 // @Success 200 {object} model.SongText
 // @Failure 400 {object} model.ErrRes
 // @Failure 422 {object} model.ErrRes
@@ -97,10 +104,22 @@ func (h *Handler) listSongTextHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filters.ID = uint64(id)
-	filters.Verse = readUint(qs, "verse", 1, v)
+	// Fetch the existing song info from the database
+	song, err := h.service.Get(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, db.ErrRecordNotFound):
+			errResponses.NotFoundResponse(w, r)
+		default:
+			errResponses.ServerErrorResponse(w, r, err)
+		}
+		return
+	}
 
-	if delivery.ValidateSongTextFilters(v, filters); !v.Valid() {
+	filters.ID = uint64(id)
+	filters.Verse = readUint(qs, "verse", 0, v)
+
+	if delivery.ValidateSongTextFilters(v, filters, uint(len(song.Text))); !v.Valid() {
 		errResponses.FailedValidationResponse(w, r, v.Errors)
 		return
 	}
@@ -142,8 +161,8 @@ func (h *Handler) listSongTextHandler(w http.ResponseWriter, r *http.Request) {
 // @Router       /songs [post]
 func (h *Handler) addSongInfoHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Groups []string `json:"groups"`
-		Songs  []string `json:"songs"`
+		Group string `json:"group"`
+		Song  string `json:"song"`
 	}
 
 	err := jsonutil.ReadJSON(w, r, &input)
@@ -153,20 +172,19 @@ func (h *Handler) addSongInfoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logger.PrintDebug("", map[string]any{
-		"method":       r.Method,
-		"url":          r.URL.String(),
-		"input groups": input.Groups,
-		"input songs":  input.Songs,
+		"method": r.Method,
+		"url":    r.URL.String(),
+		"input":  input,
 	})
 
 	// validate
 	v := validator.New()
-	if delivery.ValidateSongs(v, input.Groups, input.Songs); !v.Valid() {
+	if delivery.ValidateSongInput(v, input.Group, input.Song); !v.Valid() {
 		errResponses.FailedValidationResponse(w, r, v.Errors)
 		return
 	}
 
-	song, err := h.service.InsertSongs(input.Groups, input.Songs)
+	song, err := h.service.Insert(input.Group, input.Song)
 	if err != nil {
 		errResponses.ServerErrorResponse(w, r, err)
 		return

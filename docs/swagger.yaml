@@ -1,0 +1,276 @@
+basePath: /
+definitions:
+  model.ErrRes:
+    properties:
+      error: {}
+    type: object
+  model.SongInfo:
+    properties:
+      group:
+        type: string
+      id:
+        type: integer
+      link:
+        type: string
+      releaseDate:
+        type: string
+      song:
+        type: string
+      text:
+        items:
+          type: string
+        type: array
+    type: object
+  model.SongInput:
+    properties:
+      group:
+        type: string
+      link:
+        type: string
+      releaseDate:
+        type: string
+      song:
+        type: string
+      text:
+        items:
+          type: string
+        type: array
+    type: object
+  model.SongOut:
+    properties:
+      group:
+        type: string
+      id:
+        type: integer
+      link:
+        type: string
+      releaseDate:
+        type: string
+      song:
+        type: string
+      totalVerses:
+        type: integer
+    type: object
+  model.SongText:
+    properties:
+      text:
+        type: string
+    type: object
+  model.Songs:
+    properties:
+      songs:
+        items:
+          $ref: '#/definitions/model.SongOut'
+        type: array
+    type: object
+  model.SongsInput:
+    properties:
+      groups:
+        items:
+          type: string
+        type: array
+      songs:
+        items:
+          type: string
+        type: array
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  title: Song Library API
+  version: "1.0"
+paths:
+  /songs:
+    get:
+      consumes:
+      - application/json
+      description: listing songs data
+      parameters:
+      - description: name search by group
+        in: query
+        name: group
+        type: string
+      - description: name search by song
+        in: query
+        name: song
+        type: string
+      - description: search by release date (YYYY, MM.YYYY or DD.MM.YYYY)
+        in: query
+        name: releaseDate
+        type: string
+      - description: search by a part of song's text
+        in: query
+        name: text
+        type: string
+      - description: match link
+        in: query
+        name: link
+        type: string
+      - description: page number, default 1
+        in: query
+        name: page
+        type: integer
+      - description: page size, default 10
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Songs'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/model.ErrRes'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrRes'
+      summary: list
+      tags:
+      - songs
+    post:
+      consumes:
+      - application/json
+      description: add songs info
+      parameters:
+      - description: song collection
+        in: body
+        name: songs
+        required: true
+        schema:
+          $ref: '#/definitions/model.SongsInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Songs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrRes'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/model.ErrRes'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrRes'
+      summary: add
+      tags:
+      - songs
+  /songs/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: delete song data
+      parameters:
+      - description: song ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SongInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ErrRes'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrRes'
+      summary: delete
+      tags:
+      - songs
+    patch:
+      consumes:
+      - application/json
+      description: update song data by ID
+      parameters:
+      - description: song ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: song info struct
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/model.SongInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SongInfo'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrRes'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ErrRes'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/model.ErrRes'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrRes'
+      summary: update
+      tags:
+      - songs
+  /songs/{id}/text:
+    get:
+      consumes:
+      - application/json
+      description: get song's text
+      parameters:
+      - description: song id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: verse number, default 0 (display full text)
+        in: query
+        name: verse
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SongText'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrRes'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/model.ErrRes'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrRes'
+      summary: get text
+      tags:
+      - songs
+swagger: "2.0"
