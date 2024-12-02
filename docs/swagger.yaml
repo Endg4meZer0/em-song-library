@@ -36,18 +36,31 @@ definitions:
           type: string
         type: array
     type: object
-  model.SongText:
+  model.SongOut:
     properties:
+      group:
+        type: string
+      id:
+        type: integer
+      link:
+        type: string
+      releaseDate:
+        type: string
+      song:
+        type: string
       totalVerses:
         type: integer
-      verse:
+    type: object
+  model.SongText:
+    properties:
+      text:
         type: string
     type: object
   model.Songs:
     properties:
       songs:
         items:
-          $ref: '#/definitions/model.SongInfo'
+          $ref: '#/definitions/model.SongOut'
         type: array
     type: object
   model.SongsInput:
@@ -80,6 +93,18 @@ paths:
       - description: name search by song
         in: query
         name: song
+        type: string
+      - description: search by release date (YYYY, MM.YYYY or DD.MM.YYYY)
+        in: query
+        name: releaseDate
+        type: string
+      - description: search by a part of song's text
+        in: query
+        name: text
+        type: string
+      - description: match link
+        in: query
+        name: link
         type: string
       - description: page number, default 1
         in: query
@@ -222,7 +247,7 @@ paths:
         name: id
         required: true
         type: integer
-      - description: verse number, default 1
+      - description: verse number, default 0 (display full text)
         in: query
         name: verse
         type: integer

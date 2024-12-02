@@ -42,6 +42,24 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "string",
+                        "description": "search by release date (YYYY, MM.YYYY or DD.MM.YYYY)",
+                        "name": "releaseDate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "search by a part of song's text",
+                        "name": "text",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "match link",
+                        "name": "link",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "page number, default 1",
                         "name": "page",
@@ -256,7 +274,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "verse number, default 1",
+                        "description": "verse number, default 0 (display full text)",
                         "name": "verse",
                         "in": "query"
                     }
@@ -346,13 +364,33 @@ const docTemplate = `{
                 }
             }
         },
+        "model.SongOut": {
+            "type": "object",
+            "properties": {
+                "group": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "link": {
+                    "type": "string"
+                },
+                "releaseDate": {
+                    "type": "string"
+                },
+                "song": {
+                    "type": "string"
+                },
+                "totalVerses": {
+                    "type": "integer"
+                }
+            }
+        },
         "model.SongText": {
             "type": "object",
             "properties": {
-                "totalVerses": {
-                    "type": "integer"
-                },
-                "verse": {
+                "text": {
                     "type": "string"
                 }
             }
@@ -363,7 +401,7 @@ const docTemplate = `{
                 "songs": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.SongInfo"
+                        "$ref": "#/definitions/model.SongOut"
                     }
                 }
             }
