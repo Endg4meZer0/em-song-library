@@ -26,23 +26,24 @@ func ErrorResponse(w http.ResponseWriter, r *http.Request, status int, message a
 func ServerErrorResponse(w http.ResponseWriter, r *http.Request, err error) {
 	LogError(r, err)
 	message := "the server encountered a problem and could not process your request"
-	ErrorResponse(w, r, http.StatusInternalServerError, message)
+	ErrorResponse(w, r, http.StatusInternalServerError, map[string]map[string]string{"errors": {"message": message}})
 }
 
 func NotFoundResponse(w http.ResponseWriter, r *http.Request) {
 	message := "the requested resource could not be found"
-	ErrorResponse(w, r, http.StatusNotFound, message)
+	ErrorResponse(w, r, http.StatusNotFound, map[string]map[string]string{"errors": {"message": message}})
 }
 
 func MethodNotAllowedResponse(w http.ResponseWriter, r *http.Request) {
 	message := fmt.Sprintf("the %s method is not supported for this resource", r.Method)
-	ErrorResponse(w, r, http.StatusMethodNotAllowed, message)
+	ErrorResponse(w, r, http.StatusMethodNotAllowed, map[string]map[string]string{"errors": {"message": message}})
 }
 
 func BadRequestResponse(w http.ResponseWriter, r *http.Request, err error) {
-	ErrorResponse(w, r, http.StatusBadRequest, err.Error())
+	ErrorResponse(w, r, http.StatusBadRequest, map[string]map[string]string{"errors": {"message": "bad request", "error": err.Error()}})
 }
 
 func FailedValidationResponse(w http.ResponseWriter, r *http.Request, errors map[string]string) {
+	errors["message"] = "encountered errors"
 	ErrorResponse(w, r, http.StatusUnprocessableEntity, map[string]map[string]string{"errors": errors})
 }
