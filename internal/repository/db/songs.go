@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 
 	"effective-mobile-song-library/internal/model"
@@ -113,6 +114,43 @@ func (sr *SongsRepository) GetAll(filters model.SongFilters) ([]*model.SongInfo,
 	return songs, nil
 }
 
+func (sr *SongsRepository) GetFullText(id uint64) (*string, error) {
+	query := `
+	SELECT song_text
+	FROM songs
+	WHERE (song_id = $1)`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []any{
+		id,
+	}
+
+	rows, err := sr.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var fullText []string
+
+	for rows.Next() {
+		err := rows.Scan(pq.Array(&fullText))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	out := strings.Join(fullText, "\n\n")
+
+	return &out, nil
+}
+
 func (sr *SongsRepository) GetText(filters model.SongTextFilters) (*string, error) {
 	query := `
 	SELECT song_text[$2]
@@ -133,10 +171,10 @@ func (sr *SongsRepository) GetText(filters model.SongTextFilters) (*string, erro
 	}
 	defer rows.Close()
 
-	var verse string
+	var text string
 
 	for rows.Next() {
-		err := rows.Scan(&verse)
+		err := rows.Scan(&text)
 		if err != nil {
 			return nil, err
 		}
@@ -146,15 +184,14 @@ func (sr *SongsRepository) GetText(filters model.SongTextFilters) (*string, erro
 		return nil, err
 	}
 
-	return &verse, nil
+	return &text, nil
 }
 
 func (sr *SongsRepository) Insert(song *model.SongInfo) error {
 	query := `
-		INSERT INTO songs ("group", song, release_date, song_text, link)
-		VALUES ($1, $2, $3, $4, $5)
-		RETURNING song_id
-	`
+	INSERT INTO songs ("group", song, release_date, song_text, link)
+	VALUES ($1, $2, $3, $4, $5)
+	RETURNING song_id`
 
 	args := []any{
 		song.Group,
@@ -172,10 +209,9 @@ func (sr *SongsRepository) Insert(song *model.SongInfo) error {
 
 func (sr *SongsRepository) Update(song *model.SongInfo) error {
 	query := `
-		UPDATE songs
-		SET "group" = $2, song = $3, release_date = $4, song_text = $5, link = $6
-		WHERE song_id = $1
-	`
+	UPDATE songs
+	SET "group" = $2, song = $3, release_date = $4, song_text = $5, link = $6
+	WHERE song_id = $1`
 
 	args := []any{
 		song.ID,
