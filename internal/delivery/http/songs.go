@@ -17,8 +17,8 @@ type SongLibraryService interface {
 	Get(id uint64) (*model.SongInfo, error)
 	GetAll(model.SongFilters) ([]*model.SongInfo, error)
 	GetText(model.SongTextFilters) (*string, error)
-	InsertSongs(groups []string, songs []string) ([]*model.SongInfo, error)
-	Update(cars *model.SongInfo) error
+	Insert(group string, song string) (*model.SongInfo, error)
+	Update(songs *model.SongInfo) error
 	Delete(id uint64) error
 }
 
@@ -29,8 +29,11 @@ type SongLibraryService interface {
 // @Produce json
 // @Param  group   query string  false  "name search by group"
 // @Param  song   query string  false  "name search by song"
+// @Param  release_date   query string  false  "search by release date (YYYY, MM.YYYY or DD.MM.YYYY)"
+// @Param  text   query string  false  "search by a part of song's text"
+// @Param  link   query string  false  "match link"
 // @Param  page   query uint  false  "page number, default 1"
-// @Param  pageSize   query uint  false  "page size, default 10"
+// @Param  page_size   query uint  false  "page size, default 10"
 // @Success 200 {object} model.Songs
 // @Failure 422 {object} model.ErrRes
 // @Failure 500 {object} model.ErrRes
@@ -42,6 +45,9 @@ func (h *Handler) listSongsHandler(w http.ResponseWriter, r *http.Request) {
 
 	filters.Group = readString(qs, "group", "")
 	filters.Song = readString(qs, "song", "")
+	filters.ReleaseDate = readString(qs, "release_date", "")
+	filters.Text = readString(qs, "text", "")
+	filters.Link = readString(qs, "link", "")
 
 	filters.Page = readUint(qs, "page", 1, v)
 	filters.PageSize = readUint(qs, "page_size", 10, v)
@@ -143,8 +149,8 @@ func (h *Handler) listSongTextHandler(w http.ResponseWriter, r *http.Request) {
 // @Router       /songs [post]
 func (h *Handler) addSongInfoHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Groups []string `json:"groups"`
-		Songs  []string `json:"songs"`
+		Group string `json:"group"`
+		Song  string `json:"song"`
 	}
 
 	err := jsonutil.ReadJSON(w, r, &input)
@@ -154,20 +160,19 @@ func (h *Handler) addSongInfoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logger.PrintDebug("", map[string]any{
-		"method":       r.Method,
-		"url":          r.URL.String(),
-		"input groups": input.Groups,
-		"input songs":  input.Songs,
+		"method": r.Method,
+		"url":    r.URL.String(),
+		"input":  input,
 	})
 
 	// validate
 	v := validator.New()
-	if delivery.ValidateSongs(v, input.Groups, input.Songs); !v.Valid() {
+	if delivery.ValidateSongInput(v, input.Group, input.Song); !v.Valid() {
 		errResponses.FailedValidationResponse(w, r, v.Errors)
 		return
 	}
 
-	song, err := h.service.InsertSongs(input.Groups, input.Songs)
+	song, err := h.service.Insert(input.Group, input.Song)
 	if err != nil {
 		errResponses.ServerErrorResponse(w, r, err)
 		return

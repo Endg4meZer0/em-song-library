@@ -1,8 +1,10 @@
 package validator
 
-import "regexp"
+import (
+	"regexp"
+)
 
-var ReleaseYearRX = regexp.MustCompile(`[0-9]{4}$`)
+var ReleaseYearRX = regexp.MustCompile(`^[0-9]{4}$`)
 var ReleaseYearMonthRX = regexp.MustCompile(`^[0-1][0-9]\.[0-9]{4}$`)
 var ReleaseDateRX = regexp.MustCompile(`^[0-3][0-9]\.[0-1][0-9]\.[0-9]{4}$`)
 

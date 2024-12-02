@@ -4,8 +4,8 @@ type SongFilters struct {
 	Group       string
 	Song        string
 	ReleaseDate string
-	Link        string
 	Text        string
+	Link        string
 	PageSize    uint
 	Page        uint
 }

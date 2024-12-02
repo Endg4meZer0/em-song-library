@@ -85,7 +85,7 @@ func (l *Logger) print(level Level, message string, properties map[string]any) (
 		Properties: properties,
 	}
 
-	if level >= LevelError {
+	if level >= LevelFatal {
 		out.Trace = string(debug.Stack())
 	}
 

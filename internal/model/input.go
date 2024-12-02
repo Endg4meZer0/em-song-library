@@ -4,8 +4,8 @@ type SongInput struct {
 	Group       *string   `json:"group"`
 	Song        *string   `json:"song"`
 	ReleaseDate *string   `json:"releaseDate"`
-	Link        *string   `json:"link"`
 	Text        *[]string `json:"text"`
+	Link        *string   `json:"link"`
 }
 
 type SongsInput struct {

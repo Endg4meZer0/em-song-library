@@ -15,7 +15,7 @@ type (
 		GetAll(filters model.SongFilters) ([]*model.SongInfo, error)
 		GetText(filters model.SongTextFilters) (*string, error)
 		Insert(*model.SongInfo) error
-		Update(cars *model.SongInfo) error
+		Update(songs *model.SongInfo) error
 		Delete(id uint64) error
 	}
 
@@ -48,37 +48,33 @@ func (sl *SongLibraryService) GetText(filters model.SongTextFilters) (*string, e
 	return sl.songRepo.GetText(filters)
 }
 
-func (sl *SongLibraryService) InsertSongs(groups []string, songs []string) ([]*model.SongInfo, error) {
-	songInfos := make([]*model.SongInfo, len(groups))
-	for i := range groups {
-		songInfo, err := sl.apiClient.GetSongInfoWithDetails(groups[i], songs[i])
-		
-		logger.PrintDebug("info from external API", map[string]any{
-			"songInfo": songInfo,
-		})
+func (sl *SongLibraryService) Insert(group string, song string) (*model.SongInfo, error) {
+	songInfo, err := sl.apiClient.GetSongInfoWithDetails(group, song)
 
-		if err != nil {
-			if errors.Is(err, external.ErrBadRequest) {
-				logger.PrintDebug("did not add song", map[string]any{
-					"group": groups[i],
-					"song":  songs[i],
-					"error": err,
-				})
-			} else {
-				return nil, err
-			}
-		}
+	logger.PrintDebug("info from external API", map[string]any{
+		"songInfo": songInfo,
+	})
 
-		if songInfo != nil {
-			err = sl.songRepo.Insert(songInfo)
-			if err != nil {
-				return nil, err
-			}
-			songInfos = append(songInfos, songInfo)
+	if err != nil {
+		if errors.Is(err, external.ErrBadRequest) {
+			logger.PrintDebug("did not add song", map[string]any{
+				"group": group,
+				"song":  song,
+				"error": err,
+			})
+		} else {
+			return nil, err
 		}
 	}
-	
-	return songInfos, nil
+
+	if songInfo != nil {
+		err = sl.songRepo.Insert(songInfo)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return songInfo, nil
 }
 
 func (sl *SongLibraryService) Update(song *model.SongInfo) error {
